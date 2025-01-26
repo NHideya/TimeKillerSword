@@ -1,4 +1,4 @@
-# TimeKillerSword
+# 時間抹消の剣
 
 ## 操作方法
 ||キーボード|XBox|PS4/PS5|Switch|
@@ -36,9 +36,12 @@
 ## 制作期間
 2024/9/25 ~ 2025/1/18
 
-## 使用アセット
-
 ## 権利表明
+OPTPiX SpriteStudio
+---
+DOTween
+---
+Copyright (c) 2015 Daniele Giardini, Demigiant
 
 
  
