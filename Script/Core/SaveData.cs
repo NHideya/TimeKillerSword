@@ -4,23 +4,27 @@ using UnityEngine;
 using System.IO;
 using UnityEngine.SceneManagement;
 
+
+// セーブデータを管理する構造体
 [System.Serializable]
 public struct SaveData
 {
     public static SaveData Instance;
-    //map 
+    // マップのシーン名を格納するハッシュセット
     public HashSet<string> sceneNames;
 
-    //bench
+      // ベンチのシーン名と位置
     public string benchSceneName;
     public Vector2 benchPos;
 
-    //player Stuff
+    // プレイヤーのステータス
     public float playerHealth;
     public float playerMana;
     public Vector2 playerPosition;
     public string lastScene;
     public bool newGame;
+
+    // チュートリアルの進行状況
     
      public bool walkTutorialDone;
       public bool jumpTutorialDone;
@@ -33,21 +37,29 @@ public struct SaveData
     public bool strongAttackTutorialDone;
     public bool bossBeated;
     
+    
+    // 初期化メソッド
     public void Initialize()
     {
+
+        // セーブデータファイルが存在しない場合、ファイルを作成
         if (!File.Exists(Application.persistentDataPath + "/save.bench.data"))
         {
             BinaryWriter writer = new BinaryWriter(File.Create(Application.persistentDataPath + "/save.bench.data"));
-             writer.Write("");
+            writer.Write("");
             writer.Write("");
             writer.Write("");
         }
+
+        // シーン名のハッシュセットを初期化
         if (sceneNames == null)
         {
             sceneNames = new HashSet<string>();
         }
     }
 
+
+    // ベンチのデータを保存
     public void SaveBench()
     {
         using (BinaryWriter writer = new BinaryWriter(File.OpenWrite(Application.persistentDataPath + "/save.bench.data")))
@@ -57,6 +69,8 @@ public struct SaveData
             writer.Write(benchPos.y);
         }
     }
+
+    // ベンチのデータを読み込み
 
     public void LoadBench()
     {
@@ -70,26 +84,29 @@ public struct SaveData
             }
         }
     }
+    
+    
+    //セーブされたシーンを読み込み
     public string LoadSceneName()
     {
-       
+
         if (File.Exists(Application.persistentDataPath + "/save.bench.data"))
         {
             Debug.Log(Application.persistentDataPath);
             using (BinaryReader reader = new BinaryReader(File.OpenRead(Application.persistentDataPath + "/save.bench.data")))
             {
-               lastScene = reader.ReadString();
-               
+                lastScene = reader.ReadString();
+
             }
             return lastScene;
         }
-         
+
         return "Not_Exist";
     }
 
 
    
-
+    // 新しいゲームのためのフラグを初期化
     public void InitializeFlagForNewGame()
     {
         walkTutorialDone = false;
@@ -105,7 +122,7 @@ public struct SaveData
     }
 
     
-
+    // プレイヤーデータを保存
     public void SavePlayerData()
     {
         using (BinaryWriter writer = new BinaryWriter(File.OpenWrite(Application.persistentDataPath + "/save.player.data")))
@@ -135,6 +152,8 @@ public struct SaveData
 
         }
     }
+    
+    // プレイヤーデータを読み込み
     public void LoadPlayerData()
     {
         if (File.Exists(Application.persistentDataPath + "/save.player.data"))
@@ -145,15 +164,15 @@ public struct SaveData
                 playerMana = reader.ReadSingle();
                 playerPosition.x = reader.ReadSingle();
                 playerPosition.y = reader.ReadSingle();
-               
+
                 lastScene = reader.ReadString();
 
                 SceneManager.LoadScene(lastScene);
                 PlayerController.Instance.transform.position = playerPosition;
-                 
+
                 PlayerController.Instance.Health = playerHealth;
                 PlayerController.Instance.Mana = playerMana;
-               walkTutorialDone = reader.ReadBoolean();
+                walkTutorialDone = reader.ReadBoolean();
                 jumpTutorialDone = reader.ReadBoolean();
                 wallJumpTutorialDone = reader.ReadBoolean();
                 attackTutorialDone = reader.ReadBoolean();
@@ -169,7 +188,7 @@ public struct SaveData
         {
             Debug.Log("File doesnt exits");
             PlayerController.Instance.Health = PlayerController.Instance.maxHealth;
-            
+
         }
     }
 }

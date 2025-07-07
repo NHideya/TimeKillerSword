@@ -24,9 +24,12 @@ public class DeviceManager : MonoBehaviour
 
     private Coroutine coroutine;
 
+    
+    //初期化処理
     private void Awake()
     {
-        if(Instance != null && Instance != this)
+        //インスタンスをsingletonに設定
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
         }
@@ -36,20 +39,25 @@ public class DeviceManager : MonoBehaviour
         }
         DontDestroyOnLoad(gameObject);
 
+
+        //デバイスの抜き差しで呼び出すメソッドの登録を行う
+        //デバイスが抜かれたときにゲームを一時停止する
         InputSystem.onDeviceChange +=
             (device, change) =>
             {
-                switch(change)
+                switch (change)
                 {
-                   
-            case InputDeviceChange.Removed:
-                GameManager.Instance.Pause();
-                break;
+
+                    case InputDeviceChange.Removed:
+                        GameManager.Instance.Pause();
+                        break;
                 }
-           
+
             };
-        
+
     }
+
+    //初期化処理
     void Start()
     {
        playerInput = GetComponent<PlayerInput>();
@@ -59,10 +67,12 @@ public class DeviceManager : MonoBehaviour
        ps5Press =  playerInput.actions.FindAction("PS5");
        ps4Press =  playerInput.actions.FindAction("Switch");
        currentDevice = InputDeviceType.Keyboard;
-       foreach(var device in InputSystem.devices)
-       {
-        Debug.Log(device);
-       }
+       
+       //起動時に現在利用可能な入力デバイスを全てコンソールへ表示
+       foreach (var device in InputSystem.devices)
+        {
+            Debug.Log(device);
+        }
     }
 
     void Update()
@@ -70,16 +80,22 @@ public class DeviceManager : MonoBehaviour
         Debug.Log(EventSystem.current);
     }
 
-    public void StartShakeController(float _left,float _right,float _time)
+    //コントローラーの振動を開始する処理
+    //振動量は_reft(低周波)_right(高周波)により決められる
+    //_timeはコントローラーが振動する時間を決める
+    public void StartShakeController(float _left, float _right, float _time)
     {
-        if(coroutine != null)
-        StopCoroutine(coroutine);
-        coroutine = StartCoroutine(ShakeController(_left,_right,_time));
+        //すでに振動していたら振動を停止させる
+        if (coroutine != null)
+            StopCoroutine(coroutine);
+        coroutine = StartCoroutine(ShakeController(_left, _right, _time));
     }
-    
+
+    //キーボードの任意のキーを押した時に実行
+    //GUIの表示の変更を呼び出す
      public void ChangeKeyboard(InputAction.CallbackContext context)
     {
-        if(TutorialManager.Instance != null && context.performed)
+        if (TutorialManager.Instance != null && context.performed)
         {
             Debug.Log("Change Key");
             currentDevice = InputDeviceType.Keyboard;
@@ -87,20 +103,25 @@ public class DeviceManager : MonoBehaviour
         }
     }
 
+    //XBOXおコントローラーの任意のキーを押した時に実行
+    //GUIの表示の変更を呼び出す
     public void ChangeXbox(InputAction.CallbackContext context)
     {
-        if(TutorialManager.Instance != null && context.performed)
-       {
-         Debug.Log("Change X");
-        currentDevice = InputDeviceType.Xbox;
-        TutorialManager.Instance.ActiveInfo(currentDevice);
-       }
+        if (TutorialManager.Instance != null && context.performed)
+        {
+            Debug.Log("Change X");
+            currentDevice = InputDeviceType.Xbox;
+            TutorialManager.Instance.ActiveInfo(currentDevice);
+        }
     }
+    
+    //DualShockの任意のキーを押した時に実行
+    //GUIの表示の変更を呼び出す
      public void ChangePS(InputAction.CallbackContext context)
     {
-        if(TutorialManager.Instance != null && context.performed)
-       {
-            if(ps5Press.triggered)
+        if (TutorialManager.Instance != null && context.performed)
+        {
+            if (ps5Press.triggered)
             {
                 Debug.Log("PS5");
                 currentDevice = InputDeviceType.PS5;
@@ -112,20 +133,22 @@ public class DeviceManager : MonoBehaviour
                 currentDevice = InputDeviceType.PS4;
                 TutorialManager.Instance.ActiveInfo(currentDevice);
             }
-       }
+        }
     }
 
+    //Switchコントローラーの任意のキーを押した時に実行
+    //GUIの表示の変更を呼び出す
      public void ChangeSwitch(InputAction.CallbackContext context)
     {
-        if(TutorialManager.Instance != null && context.performed)
-       {
-        Debug.Log("Change Switch");
-        currentDevice = InputDeviceType.Switch;
-        TutorialManager.Instance.ActiveInfo(currentDevice);
-       }
+        if (TutorialManager.Instance != null && context.performed)
+        {
+            Debug.Log("Change Switch");
+            currentDevice = InputDeviceType.Switch;
+            TutorialManager.Instance.ActiveInfo(currentDevice);
+        }
     }
-    
 
+    //コントローラーを指定の強さ(_left,_right)で_time秒振動させる非同期処理    
     IEnumerator ShakeController(float _left,float _right,float _time)
     {
         Gamepad gamepad = Gamepad.current;

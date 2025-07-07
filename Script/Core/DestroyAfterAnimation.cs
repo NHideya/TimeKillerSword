@@ -1,3 +1,5 @@
+//エフェクトを発生させるオブジェクトをdestroytime秒後削除する処理クラス
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;

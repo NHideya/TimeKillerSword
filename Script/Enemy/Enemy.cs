@@ -1,14 +1,18 @@
+//敵キャラクターの抽象クラス
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
 
+
+
 public class Enemy : MonoBehaviour
 {
     [SerializeField] protected LayerMask playerLayer;
     [SerializeField] protected GameObject Enemyparent;
-    [Header("Enemy Setting")]
+    [Header("敵パラメーター")]
     [SerializeField] public float maxhealth;
     [SerializeField] protected float recoilLength;
     [SerializeField] protected float recoilFactor;
@@ -17,7 +21,7 @@ public class Enemy : MonoBehaviour
 
     protected float health;
     
-    [Header("Move Setting")]
+    [Header("移動用設定")]
 
     [SerializeField] protected float speed;
 
@@ -35,7 +39,7 @@ public class Enemy : MonoBehaviour
 
    
    [Space(5)]
-   [Header("Serch Setting")]
+   [Header("敵の視野の設定")]
 
    [SerializeField] protected float viewRange;
 
@@ -48,7 +52,7 @@ public class Enemy : MonoBehaviour
     protected float distance;
 
     [Space(5)]
-    [Header("Stun Settitng")]
+    [Header("気絶用設定")]
     [SerializeField] protected float stun;
     [SerializeField] protected float chageAmountOfStun;
     [SerializeField] protected float decreaseAmountOfStun;
@@ -61,26 +65,26 @@ public class Enemy : MonoBehaviour
     [SerializeField] protected GameObject stunready;
 
     [Space(5)]
-    [Header("Behaviour Tree")]
+    [Header("敵AI")]
     [SerializeField] protected BehaviourTree tree;
 
     [Space(5)]
     
     [HideInInspector] public EnemyState eState;
 
-    [Header("Patrol")]
+    [Header("探索範囲")]
     [SerializeField] protected Transform pointA;
     [SerializeField] protected Transform pointB;
 
     [Space(5)]
-    [Header("Sound")]
+    [Header("サウンドエフェクト")]
     [SerializeField] protected AudioClip attackSound;
     [SerializeField] protected AudioClip counterSound;
      [SerializeField] protected AudioClip stanSound;
      [SerializeField] protected AudioClip beforeattackSound;
      
       [Space(5)]
-    [Header("DeathSetting")]
+    [Header("死亡時エフェクト")]
     [SerializeField] protected GameObject deathEffect;
 
     protected float recoilTimer;
@@ -121,17 +125,18 @@ public class Enemy : MonoBehaviour
 
     protected bool isdeath;
 
-    // Start is called before the first frame update
+    //オブジェクトが有効化された際実行
+    //初期化処理
     protected virtual void Start()
     {
 
         context = CreateBehaviourTreeContext();
         context.player = PlayerController.Instance;
-       if(pointA  != null) 
-       {
+        if (pointA != null)
+        {
             target = pointA;
             context.patroltargetA = pointA;
-       }
+        }
         if (pointB != null) context.patroltargetB = pointB;
         tree = tree.Clone();
         tree.Bind(context);
@@ -159,7 +164,7 @@ public class Enemy : MonoBehaviour
     {
 
     }
-    // Update is called once per frame
+    // 毎フレーム実行
     protected virtual void Update()
     {
         if(GameManager.Instance.gameisPaused) return;
@@ -175,7 +180,6 @@ public class Enemy : MonoBehaviour
         }
         if (Health <= 0 && !isdeath)
         {
-            //Destroy(Enemyparent);
             StopCoroutine(coroutinename);
             StartCoroutine(DeathAction());
             return;
@@ -186,6 +190,8 @@ public class Enemy : MonoBehaviour
             return;
         }
         SetCanWalk();
+
+        //AIが実装されている場合、AIを制御するBehaviourTreeを更新する
         if (tree)
         {
             tree.Update();
@@ -195,9 +201,10 @@ public class Enemy : MonoBehaviour
             LookingDirection();
             SetAnimation();
         }
-        
-        
-        if(coroutinesignal)
+
+        //BehaviourTreeから信号が送られた時に実行
+        //主に攻撃等のアクションを行う
+        if (coroutinesignal)
         {
             SetCoroutine();
         }
@@ -220,17 +227,20 @@ public class Enemy : MonoBehaviour
         ChargeMove();
     }
 
+    //BehaviourTreeから呼び出される
+    //指定されたアクション(coroutinename)を実行する
     protected virtual void SetCoroutine()
     {
         coroutinesignal = false;
         StartCoroutine(coroutinename);
     }
 
+    //移動速度に応じて歩行アニメーションと待機アニメーションを切り替える
     protected virtual void SetAnimation()
     {
-        if(rb.velocity.x != 0)
+        if (rb.velocity.x != 0)
         {
-            anim.SetFloat("Blend",1);
+            anim.SetFloat("Blend", 1);
         }
         else
         {
@@ -238,10 +248,11 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    //移動先に地面があり、なおかつ壁がない場合移動可能を返す
     protected virtual void SetCanWalk()
     {
         eState.canwalk = !Physics2D.OverlapCircle(wall.position, 0.1f, obstacleMask) && Physics2D.OverlapCircle(ground.position, 0.1f, obstacleMask);
-        
+
     }
 
     virtual public void  LookingDirection()
@@ -275,120 +286,156 @@ public class Enemy : MonoBehaviour
             }
         }
     }
+
+    //被ダメージ時呼び出し
+    //ダメージ分体力を減らす
     virtual public void EnemyHit(float _damageDone)
     {
         eState.EncounterPlayer = true;
         Health -= _damageDone * (eState.stuning ? stundamage : 1);
-        if(!eState.Attacking)
+        if (!eState.Attacking)
             transform.DOPunchPosition(new Vector3(0.05f, 1.5f, 0), 0.3f, 60, 0);
 
     }
 
-
+    //BehaviourTree(AI)が利用するデータを渡す
     protected virtual Context CreateBehaviourTreeContext()
     {
         return Context.CreateFromGameObject(gameObject);
     }
 
-
+    //プレイヤーを目視したか否かを判定する
     protected virtual bool IsFound()
     {
+
+        //プレイヤーが半径distanceの範囲にいるか判定
         distance = Vector3.Distance(PlayerController.Instance.transform.position,transform.position);
         if(distance <= viewRange)
         {
             directionToPlayer = (PlayerController.Instance.transform.position - transform.position).normalized;
-            if(Vector3.Angle(transform.right *(eState.lookingRight ? 1:-1),directionToPlayer) < viewAngle / 2)
+            
+            //プレイヤーが敵の視野(viewAngle)の範囲にいるか判定
+            if (Vector3.Angle(transform.right * (eState.lookingRight ? 1 : -1), directionToPlayer) < viewAngle / 2)
             {
-                if(!Physics2D.Raycast(transform.position,directionToPlayer,distance,obstacleMask))
+                //プレイヤーと敵の間に目視を妨げる障害物があるかをレイを飛ばし判定
+                if (!Physics2D.Raycast(transform.position, directionToPlayer, distance, obstacleMask))
                 {
+
+                    //すべての条件を満たしたときのみ目視したと判定
                     return true;
                 }
             }
         }
         return false;
     }
-
+   
+   //歩行可能か判断し、可能ならプレイヤーの方向へ移動する 
     protected virtual void ChasePlayer()
     {
-        anim.SetBool("Walking",true);
+        anim.SetBool("Walking", true);
         canWalk = !Physics2D.OverlapCircle(wall.position, 0.3f, obstacleMask) && Physics2D.OverlapCircle(ground.position, 0.2f, obstacleMask);
         if (canWalk) transform.position = Vector3.MoveTowards(transform.position, new Vector3(PlayerController.Instance.transform.position.x, transform.position.y, 0), runspeed * Time.deltaTime);
         //eState.chasing = false;
     }
 
-    protected virtual void Hit(Transform _attackTransform, Vector2 _attackArea,  Vector2 _powerDir,float _recoilPower ,float _damage,bool _parryable)
+    //攻撃判定の判定を生成し、判定内にいるプレイヤーにダメージを与える
+    protected virtual void Hit(Transform _attackTransform, Vector2 _attackArea, Vector2 _powerDir, float _recoilPower, float _damage, bool _parryable)
     {
-        Collider2D objectToHit = Physics2D.OverlapBox(_attackTransform.position,_attackArea,0f,playerLayer);
-        if(objectToHit && !PlayerController.Instance.pState.invincible)
+        //長方形の攻撃判定を生成
+        //プレイヤーの
+        Collider2D objectToHit = Physics2D.OverlapBox(_attackTransform.position, _attackArea, 0f, playerLayer);
+        if (objectToHit && !PlayerController.Instance.pState.invincible)
         {
-            PlayerController.Instance.TakeDamege(_damage,eState.lookingRight,_parryable,this);
-            
-            if(!PlayerController.Instance.pState.counter)
-                PlayerController.Instance.rb.velocity = (eState.lookingRight ? _recoilPower : -_recoilPower) * _powerDir.normalized; 
+            PlayerController.Instance.TakeDamege(_damage, eState.lookingRight, _parryable, this);
+
+            if (!PlayerController.Instance.pState.counter)
+                PlayerController.Instance.rb.velocity = (eState.lookingRight ? _recoilPower : -_recoilPower) * _powerDir.normalized;
             //PlayerController.Instance.HitStopTime(0.5f,1,0.3f);
         }
-       
+
     }
+
+
+    //体力を管理するプロパティ
+
+    //TODO: GUIと相互依存しているためMV(R)Pパターンで解消する必要がある
 
     virtual public float Health
     {
-        get{return health;}
+        get { return health; }
         set
         {
-            if(health != value)
+            if (health != value)
             {
-                health = Mathf.Clamp(value,0,maxhealth);
-                if(HPChangeCallBack != null)
+                health = Mathf.Clamp(value, 0, maxhealth);
+                //体力の増減をGUIの表示と連動させる処理
+
+                //相互依存箇所
+                if (HPChangeCallBack != null)
                 {
                     HPChangeCallBack.Invoke();
                 }
+                //
             }
         }
     }
 
+    //気絶ゲージを管理するプロパティ
+
+    //TODO: GUIと相互依存しているためMV(R)Pパターンで解消する必要がある
     public float Stun
     {
-        get{return stun;}
+        get { return stun; }
         set
         {
-            if(stun != value)
+            if (stun != value)
             {
-                stun = Mathf.Clamp(value,0,100);
-                if(StanChangeCallBack != null)
+                stun = Mathf.Clamp(value, 0, 100);
+                //気絶ゲージの増減をGUIの表示と連動させる処理
+
+                //相互依存箇所
+                if (StanChangeCallBack != null)
                 {
                     StanChangeCallBack.Invoke();
                 }
+                //
             }
         }
     }
-    
 
+    //プレイヤーがジャストガードした際呼び出される
+    //敵の気絶ゲージを増加させる
     virtual public void ChargeStun(bool _isParry)
     {
         Stun += _isParry ? chageAmountOfStun : decreaseAmountOfStun;
-        if(stun >= 100) stunready.SetActive(true);
+        if (stun >= 100) stunready.SetActive(true);
         else stunready.SetActive(false);
     }
 
+
+    //プレイヤーがカウンターした時に実行
+    //気絶ゲージが最大なら、エフェクトを発生させ気絶させる一連の処理
     virtual public void toStun()
     {
-        if(Stun >= 100)
+        if (Stun >= 100)
         {
-            audioSource.pitch =1f;
-            DeviceManager.Instance.StartShakeController(0.3f,0.5f,0.2f);
+            audioSource.pitch = 1f;
+            DeviceManager.Instance.StartShakeController(0.3f, 0.5f, 0.2f);
             audioSource.PlayOneShot(counterSound);
             eState.Attacking = false;
             anim.SetTrigger("Stun");
-            anim.SetBool("isStun",true);
+            anim.SetBool("isStun", true);
             rb.velocity = Vector2.zero;
-           PlayerController.Instance.HitStopTime(0.1f,1f,0.5f);
+            PlayerController.Instance.HitStopTime(0.1f, 1f, 0.5f);
             StopCoroutine(coroutinename);
             stunready.SetActive(false);
-            transform.DOPunchPosition(new Vector3(0.5f,1.5f,0),0.3f,60,0);
+            transform.DOPunchPosition(new Vector3(0.5f, 1.5f, 0), 0.3f, 60, 0);
             StartCoroutine(standuration());
-            
+
         }
     }
+
+    //気絶状態をアニメーションに合わせるためのディレイ処理
 
     IEnumerator standuration()
     {
@@ -422,9 +469,12 @@ public class Enemy : MonoBehaviour
        }
     }
 
+    //敵が横移動に高速移動するメソッド
+    //攻撃時に利用
+
     protected virtual void ChargeMove()
     {
-        if(movetime >= 0)
+        if (movetime >= 0)
         {
             movetime -= Time.deltaTime;
             rb.velocity = chagevelocity;

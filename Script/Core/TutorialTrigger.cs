@@ -1,3 +1,5 @@
+//チュートリアルを出現させる条件を管理するクラス
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -16,24 +18,31 @@ public class TutorialTrigger : MonoBehaviour
      if(done)
      gameObject.SetActive(false);
    }
+
+   //チュートリアル出現範囲内にプレイヤーが新入した時に実行
+   //登録されたチュートリアルタイプをもとに表示させる処理を呼び出す
    private void OnTriggerStay2D(Collider2D _other)
    {
       if (!onOff && _other.CompareTag("Player"))
-        {
-            onOff = true;
-            TutorialManager.Instance.FadeInTutorial(tutorialType);
-        }
+      {
+         onOff = true;
+         TutorialManager.Instance.FadeInTutorial(tutorialType);
+      }
    }
+
+   //チュートリアル出現範囲からプレイヤーが出た時に実行
+   //セーブデータにチュートリアル出現済みの記録をつける処理を呼び出す
+   //出現済みと記録されたチュートリアルは今後出現しない
      private void OnTriggerExit2D(Collider2D _other)
    {
       if (onOff && _other.CompareTag("Player"))
-        {
-            onOff = false;
-            SaveTutorialDone(tutorialType);
-             
-            TutorialManager.Instance.FadeOutTutorial(tutorialType);
-            gameObject.SetActive(false);
-        }
+      {
+         onOff = false;
+         SaveTutorialDone(tutorialType);
+
+         TutorialManager.Instance.FadeOutTutorial(tutorialType);
+         gameObject.SetActive(false);
+      }
    }
 
    private void SaveTutorialDone(TutorialType _tutorialType)

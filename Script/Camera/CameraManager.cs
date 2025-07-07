@@ -22,12 +22,16 @@ public class CameraManager : MonoBehaviour
 
     private float distance;
    
+   // 起動時の初期化処理
+    // Awake の実行は一度のみ 
     private void Awake()
     {
+        // singletonを設定
         if (Instance == null)
         {
             Instance = this;
         }
+        // 全てのカメラを初期化
         for (int i = 0; i < allVirtualCameras.Length; i++)
         {
             if (allVirtualCameras[i].enabled)
@@ -41,14 +45,18 @@ public class CameraManager : MonoBehaviour
     }
     private void Start()
     {
+        //全てのカメラに焦点(プレイヤーを設定)
         for (int i = 0; i < allVirtualCameras.Length; i++)
         {
             allVirtualCameras[i].Follow = PlayerController.Instance.transform;
-            
+
 
         }
         
     }
+
+    //カメラを入れ替える処理
+
     public void SwapCamera(CinemachineVirtualCamera _newCam)
     {
         currentCamera.enabled = false;
@@ -57,6 +65,7 @@ public class CameraManager : MonoBehaviour
         framingTransposer = currentCamera.GetCinemachineComponent<CinemachineFramingTransposer>();
     }
 
+    //プレイヤー落下速度に応じてカメラがプレイヤーを移し続けるため、減衰を変更するメソッド
     public IEnumerator LerpYDamping(bool _isPlayerFalling)
     {
         isLerpingYDamp = true;
@@ -82,13 +91,16 @@ public class CameraManager : MonoBehaviour
         }
         isLerpingYDamp = false;
     }
-    public void StartCamerabounce(float _time,int _count)
+    
+    //カメラの手ブレを開始するメソッド
+    public void StartCamerabounce(float _time, int _count)
     {
-        StartCoroutine(CameraBounce(_time,_count));
+        StartCoroutine(CameraBounce(_time, _count));
     }
-    public IEnumerator CameraBounce(float _time,int _count)
+    //カメラの手ブレを行う非同期処理
+    public IEnumerator CameraBounce(float _time, int _count)
     {
-       
+
         currentCamera.Follow = null;
         currentCamera.transform.DOPunchPosition(new Vector3(0.05f, 3f, 0), _time, _count, 0);
         yield return new WaitForSeconds(_time);

@@ -1,3 +1,5 @@
+//敵キャラクターの体力バーと気絶ゲージを管理するクラス
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -20,7 +22,7 @@ public class EnemyHpManager : MonoBehaviour
 
 
   
-
+    //初期化処理
     private void Start()
     {
         if(isBoss)
@@ -39,18 +41,23 @@ public class EnemyHpManager : MonoBehaviour
         enemy.StanTimerCallBack += SetTimer;
 
     }
+    
+    //毎フレーム実行
    private void Update()
-   {
-    if(!isBoss)
-    transform.localScale = new Vector3(enemy.eState.lookingRight ? -1 : 1,1,1); 
-   } 
-   public void SetGaugeHP()
-   {
-    healthImage.DOFillAmount(enemy.Health/enemy.maxhealth,duration).OnComplete(() =>
     {
-        redHealthImage.DOFillAmount(enemy.Health / enemy.maxhealth, duration * 0.5f).SetDelay(0.5f);
-    });
-   }
+        //GUIの抜きを一定にする処理
+        if (!isBoss)
+            transform.localScale = new Vector3(enemy.eState.lookingRight ? -1 : 1, 1, 1);
+    } 
+    
+    //敵の体力に応じて体力バーを増減する処理
+   public void SetGaugeHP()
+    {
+        healthImage.DOFillAmount(enemy.Health / enemy.maxhealth, duration).OnComplete(() =>
+        {
+            redHealthImage.DOFillAmount(enemy.Health / enemy.maxhealth, duration * 0.5f).SetDelay(0.5f);
+        });
+    }
     public void SetGaugeStun()
     {
         StanImage.DOFillAmount(enemy.Stun / 100, duration);
